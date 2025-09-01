@@ -9,12 +9,15 @@ function App() {
   const [theme, setTheme] = useState("light");
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
-    document.body.className = theme === "light" ? "dark" : "light";
+    setTheme((prev) => {
+      const next = prev === "light" ? "dark" : "light";
+      document.body.className = next;
+      return next;
+    });
   };
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout ${theme}`}>
       {/* Left drawer with nested directory */}
       <Drawer onSelect={setSelectedStoryboard} />
 
