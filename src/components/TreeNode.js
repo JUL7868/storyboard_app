@@ -8,14 +8,19 @@ const TreeNode = ({ node, onSelect }) => {
     if (node.type === "folder") {
       setExpanded(!expanded);
     } else if (node.type === "file") {
-      onSelect(node.id);
+      onSelect(node.id); // ✅ send back board id
     }
   };
 
   return (
     <div className="tree-node">
       <div className="tree-label" onClick={handleClick}>
-        {node.type === "folder" ? (expanded ? "📂" : "📁") : "📄"} {node.name}
+        {node.type === "folder"
+          ? expanded
+            ? "📂"
+            : "📁"
+          : "📄"}{" "}
+        {node.name}
       </div>
       {expanded && node.children && (
         <div className="tree-children">
