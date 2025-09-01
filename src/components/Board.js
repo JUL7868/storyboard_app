@@ -1,3 +1,4 @@
+// src/components/Board.js
 import React, { useState, useEffect } from 'react';
 import {
   DragDropContext,
@@ -21,34 +22,31 @@ const initialData = {
   ]
 };
 
-const Board = () => {
-  const [board, setBoard] = useState(() => {
-    try {
-      const saved = localStorage.getItem("storyboardData");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.columns && parsed.columns.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (err) {
-      console.error("Failed to parse saved board:", err);
-    }
-    return initialData;
-  });
-
+const Board = ({ selected }) => {
+  const [board, setBoard] = useState(initialData);
   const [editingCard, setEditingCard] = useState(null);
 
+  // ✅ Fetch board from API when selected changes
   useEffect(() => {
-    localStorage.setItem("storyboardData", JSON.stringify(board));
-  }, [board]);
+    if (selected) {
+      fetch(`http://localhost/api.php?path=boards&id=${selected}`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setBoard(data[0]); // use the API board
+          }
+        })
+        .catch(err => {
+          console.error("API error:", err);
+        });
+    }
+  }, [selected]);
 
   // ---------- Add Card ----------
   const handleAddCard = (colId) => {
     const updatedColumns = board.columns.map(col => {
       if (col.id !== colId) return col;
 
-      // enforce max 5 cards
       if (col.cards.length >= 7) return col;
 
       const newCard = {
@@ -88,42 +86,39 @@ const Board = () => {
     setEditingCard(null);
   };
 
-// ---------- Promote ----------
-const handlePromote = (columnId) => {
-  const column = board.columns.find(c => c.id === columnId);
-  if (!column) return;
+  // ---------- Promote ----------
+  const handlePromote = (columnId) => {
+    const column = board.columns.find(c => c.id === columnId);
+    if (!column) return;
 
-  const newTitle = column.title;
-  const newDescription = column.description || "";
+    const newTitle = column.title;
+    const newDescription = column.description || "";
 
-  // Convert detail cards → new columns
-  let newColumns = column.cards.map((detail, idx) => ({
-    id: `promoted-col-${idx + 1}`,
-    title: detail.title || `Column ${idx + 1}`,
-    description: detail.description || "",
-    cards: detail.children || []
-  }));
+    let newColumns = column.cards.map((detail, idx) => ({
+      id: `promoted-col-${idx + 1}`,
+      title: detail.title || `Column ${idx + 1}`,
+      description: detail.description || "",
+      cards: detail.children || []
+    }));
 
-  // Pad with blank columns until we have 7 total
-  for (let i = newColumns.length; i < 7; i++) {
-    newColumns.push({
-      id: `promoted-col-${i + 1}`,
-      title: `Column ${i + 1}`,
-      description: "",
-      cards: []
-    });
-  }
+    for (let i = newColumns.length; i < 7; i++) {
+      newColumns.push({
+        id: `promoted-col-${i + 1}`,
+        title: `Column ${i + 1}`,
+        description: "",
+        cards: []
+      });
+    }
 
-  const newBoard = {
-    title: newTitle,
-    description: newDescription,
-    columns: newColumns
+    const newBoard = {
+      title: newTitle,
+      description: newDescription,
+      columns: newColumns
+    };
+
+    setBoard(newBoard);
+    setEditingCard(null);
   };
-
-  setBoard(newBoard);
-  setEditingCard(null);
-};
-
 
   // ---------- Drag & Drop ----------
   const handleDragEnd = (result) => {
@@ -153,38 +148,35 @@ const handlePromote = (columnId) => {
       setBoard({ ...board, columns: updated });
     }
   };
+
   return (
-          <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+    <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+      {/* Logo still present — remove if not needed */}
       <img 
         src="studioImaginando.png" 
         alt="Studio Imaginando" 
         style={{ width: '100px', marginBottom: '0.5rem' }} 
       />
-    
-    {/*<div style={{ padding: '1rem', overflowX: 'auto' }}>
-      <h1 style={{ color: '#e0e0e0', fontWeight: '600' }}>Storyboarder</h1>
-    </div>*/}
 
-    {/* Editable Title */}
-    <h3
-      style={{
-        textAlign: 'center',
-        color: '#e0e0e0',
-        maxWidth: '400px',     // limit width
-        margin: '0 auto',      // center horizontally
-        padding: '0.25rem 0',  // some breathing room
-        border: '1px solid #333',
-        borderRadius: '4px'
-      }}
-      contentEditable
-      suppressContentEditableWarning
-      onBlur={(e) =>
-        setBoard({ ...board, title: e.currentTarget.textContent })
-      }
-    >
-      {board.title}
-    </h3>
-
+      {/* Editable Title */}
+      <h3
+        style={{
+          textAlign: 'center',
+          color: '#e0e0e0',
+          maxWidth: '400px',
+          margin: '0 auto',
+          padding: '0.25rem 0',
+          border: '1px solid #333',
+          borderRadius: '4px'
+        }}
+        contentEditable
+        suppressContentEditableWarning
+        onBlur={(e) =>
+          setBoard({ ...board, title: e.currentTarget.textContent })
+        }
+      >
+        {board.title}
+      </h3>
 
       {/* Editable Description */}
       <p
@@ -290,26 +282,23 @@ const handlePromote = (columnId) => {
       )}
 
       {/* Reset Board Button */}
-<div style={{ marginTop: '2rem', textAlign: 'center' }}>
-  <button
-    onClick={() => {
-      localStorage.removeItem("storyboardData");
-      window.location.reload(); // reload to re-init with initialData
-    }}
-    style={{
-      padding: '0.5rem 1rem',
-      backgroundColor: '#e53935',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '6px',
-      cursor: 'pointer'
-    }}
-  >
-    Reset Board
-  </button>
-
-</div>
-
+      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+        <button
+          onClick={() => {
+            setBoard(initialData); // Reset to fallback only
+          }}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: '#e53935',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer'
+          }}
+        >
+          Reset Board
+        </button>
+      </div>
     </div>
   );
 };

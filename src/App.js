@@ -2,38 +2,107 @@
 import React, { useState } from "react";
 import Board from "./components/Board";
 import Drawer from "./components/Drawer";
+import AdminDrawer from "./components/AdminDrawer";
 import "./App.css";
 
+
 function App() {
-  const [selectedStoryboard, setSelectedStoryboard] = useState(null);
   const [theme, setTheme] = useState("light");
+  const [showLeftDrawer, setShowLeftDrawer] = useState(true);
+  const [showRightDrawer, setShowRightDrawer] = useState(true);
+
+  const [activeBoard, setActiveBoard] = useState({
+    id: "board-1",
+    title: "Setup",
+    description: "Main setup board",
+    columns: [
+      {
+        id: "column-1",
+        title: "Characters",
+        cards: [
+          { id: "card-1", title: "Hero", description: "Protagonist" },
+          { id: "card-2", title: "Villain", description: "Antagonist" },
+        ],
+      },
+      {
+        id: "column-2",
+        title: "Locations",
+        cards: [
+          { id: "card-3", title: "Village", description: "Where it begins" },
+        ],
+      },
+    ],
+  });
 
   const toggleTheme = () => {
-    setTheme((prev) => {
-      const next = prev === "light" ? "dark" : "light";
-      document.body.className = next;
-      return next;
-    });
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
+
+  const handleUpdateBoard = (updatedBoard) => {
+    setActiveBoard(updatedBoard);
+  };
+
+  const handleSaveBoard = () => {
+    fetch("http://localhost/api.php?path=saveBoard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(activeBoard),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Save success:", data);
+        alert("Board saved!");
+      })
+      .catch((err) => console.error("Save error:", err));
   };
 
   return (
     <div className={`app-layout ${theme}`}>
-      {/* Left drawer with nested directory */}
-      <Drawer onSelect={setSelectedStoryboard} />
+      {/* Left Drawer (collapsible) */}
+      {showLeftDrawer && (
+        <Drawer
+          boards={{
+            entities: {
+              "board-1": activeBoard,
+            },
+          }}
+          activeBoardId={activeBoard.id}
+          onSelect={() => {}}
+        />
+      )}
 
-      {/* Right side content */}
+      {/* Main Content */}
+
       <div className="main-content">
         <header className="app-header">
-          <h1 className="app-title">Storyboarder</h1>
+
+
+          {/* Theme Toggle */}
           <button className="theme-toggle" onClick={toggleTheme}>
-            Switch to {theme === "light" ? "Dark" : "Light"} Theme
+            Switch Theme
           </button>
-          {/* ✅ Removed the top logo */}
+
+          {/* Collapse Toggles */}
+          <button
+            style={{ marginLeft: "1rem" }}
+            onClick={() => setShowLeftDrawer(!showLeftDrawer)}
+          >
+            {showLeftDrawer ? "Hide Left" : "Show Left"}
+          </button>
+          <button
+            style={{ marginLeft: "0.5rem" }}
+            onClick={() => setShowRightDrawer(!showRightDrawer)}
+          >
+            {showRightDrawer ? "Hide Right" : "Show Right"}
+          </button>
         </header>
 
-        {/* Main board area reacts to selected storyboard */}
-        <Board selected={selectedStoryboard} />
+        {/* Board */}
+        <Board board={activeBoard} onUpdateBoard={handleUpdateBoard} />
       </div>
+
+      {/* Right Drawer (collapsible) */}
+      {showRightDrawer && <AdminDrawer onSave={handleSaveBoard} />}
     </div>
   );
 }
