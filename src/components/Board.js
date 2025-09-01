@@ -162,9 +162,8 @@ const Board = ({ selected }) => {
       <h3
         style={{
           textAlign: 'center',
-          color: '#e0e0e0',
           maxWidth: '400px',
-          margin: '0 auto',
+          margin: '10px auto',
           padding: '0.25rem 0',
           border: '1px solid #333',
           borderRadius: '4px'
@@ -187,7 +186,8 @@ const Board = ({ selected }) => {
           padding: '0.5rem',
           backgroundColor: '#f8f9fa',
           borderRadius: '6px',
-          border: '1px solid #ddd'
+          border: '1px solid #ddd',
+          color: 'black'
         }}
         contentEditable
         suppressContentEditableWarning

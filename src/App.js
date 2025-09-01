@@ -1,38 +1,29 @@
 // src/App.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Board from "./components/Board";
 import Drawer from "./components/Drawer";
 import AdminDrawer from "./components/AdminDrawer";
 import "./App.css";
 
-
 function App() {
   const [theme, setTheme] = useState("light");
-  const [showLeftDrawer, setShowLeftDrawer] = useState(true);
-  const [showRightDrawer, setShowRightDrawer] = useState(true);
+  const [showLeftDrawer, setShowLeftDrawer] = useState(false);
+  const [showRightDrawer, setShowRightDrawer] = useState(false);
 
   const [activeBoard, setActiveBoard] = useState({
     id: "board-1",
     title: "Setup",
     description: "Main setup board",
     columns: [
-      {
-        id: "column-1",
-        title: "Characters",
-        cards: [
-          { id: "card-1", title: "Hero", description: "Protagonist" },
-          { id: "card-2", title: "Villain", description: "Antagonist" },
-        ],
-      },
-      {
-        id: "column-2",
-        title: "Locations",
-        cards: [
-          { id: "card-3", title: "Village", description: "Where it begins" },
-        ],
-      },
+      { id: "column-1", title: "Characters", cards: [] },
+      { id: "column-2", title: "Locations", cards: [] },
     ],
   });
+
+  // ✅ Ensure body has the current theme class on mount + theme change
+  useEffect(() => {
+    document.body.className = theme;
+  }, [theme]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
@@ -58,51 +49,52 @@ function App() {
 
   return (
     <div className={`app-layout ${theme}`}>
-      {/* Left Drawer (collapsible) */}
-      {showLeftDrawer && (
-        <Drawer
-          boards={{
-            entities: {
-              "board-1": activeBoard,
-            },
-          }}
-          activeBoardId={activeBoard.id}
-          onSelect={() => {}}
-        />
-      )}
+      {/* Left Drawer */}
+      <div
+        className={`drawer-container left ${showLeftDrawer ? "expanded" : "collapsed"}`}
+      >
+        <button
+          className="toggle-btn"
+          onClick={() => setShowLeftDrawer(!showLeftDrawer)}
+        >
+          {showLeftDrawer ? "×" : "☰"}
+        </button>
+        {showLeftDrawer && (
+          <Drawer
+            boards={{ entities: { "board-1": activeBoard } }}
+            activeBoardId={activeBoard.id}
+            onSelect={() => {}}
+          />
+        )}
+      </div>
 
       {/* Main Content */}
-
       <div className="main-content">
         <header className="app-header">
-
-
-          {/* Theme Toggle */}
-          <button className="theme-toggle" onClick={toggleTheme}>
-            Switch Theme
-          </button>
-
-          {/* Collapse Toggles */}
-          <button
-            style={{ marginLeft: "1rem" }}
-            onClick={() => setShowLeftDrawer(!showLeftDrawer)}
-          >
-            {showLeftDrawer ? "Hide Left" : "Show Left"}
-          </button>
-          <button
-            style={{ marginLeft: "0.5rem" }}
-            onClick={() => setShowRightDrawer(!showRightDrawer)}
-          >
-            {showRightDrawer ? "Hide Right" : "Show Right"}
-          </button>
+          <h1>Storyboarder</h1>
         </header>
-
-        {/* Board */}
         <Board board={activeBoard} onUpdateBoard={handleUpdateBoard} />
       </div>
 
-      {/* Right Drawer (collapsible) */}
-      {showRightDrawer && <AdminDrawer onSave={handleSaveBoard} />}
+      {/* Right Drawer */}
+<div
+  className={`drawer-container right ${showRightDrawer ? "expanded" : "collapsed"}`}
+>
+  <button
+    className="toggle-btn"
+    onClick={() => setShowRightDrawer(!showRightDrawer)}
+  >
+    {showRightDrawer ? "×" : "☰"}
+  </button>
+  {showRightDrawer && (
+    <AdminDrawer
+      onSave={handleSaveBoard}
+      onToggleTheme={toggleTheme}
+      theme={theme}
+    />
+  )}
+</div>
+
     </div>
   );
 }
