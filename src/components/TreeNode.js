@@ -1,34 +1,45 @@
 // src/components/TreeNode.js
 import React, { useState } from "react";
 
-const TreeNode = ({ node, onSelect }) => {
+const TreeNode = ({ node, onSelect, level = 0 }) => {
   const [expanded, setExpanded] = useState(false);
 
   const handleClick = () => {
-    if (node.type === "folder") {
-      setExpanded(!expanded);
-    } else if (node.type === "file") {
-      onSelect(node.id); // ✅ send back board id
+    if (node.children && node.children.length > 0) {
+      setExpanded(!expanded); // expand/collapse
+    } else {
+      onSelect(node.id); // select a board
     }
   };
 
   return (
-    <div className="tree-node">
-      <div className="tree-label" onClick={handleClick}>
-        {node.type === "folder"
+    <div style={{ marginLeft: level * 15 }}> {/* indent based on depth */}
+      <div
+        className="tree-label"
+        onClick={handleClick}
+        style={{
+          cursor: "pointer",
+          fontSize: `${14 - level}px`, // smaller font at deeper levels
+        }}
+      >
+        {node.children && node.children.length > 0
           ? expanded
-            ? "📂"
-            : "📁"
-          : "📄"}{" "}
-        {node.name}
+            ? "📂 "
+            : "📁 "
+          : "📄 "}
+        {node.title}
       </div>
-      {expanded && node.children && (
-        <div className="tree-children">
-          {node.children.map((child, idx) => (
-            <TreeNode key={idx} node={child} onSelect={onSelect} />
-          ))}
-        </div>
-      )}
+
+      {expanded &&
+        node.children &&
+        node.children.map((child) => (
+          <TreeNode
+            key={child.id}
+            node={child}
+            onSelect={onSelect}
+            level={level + 1}
+          />
+        ))}
     </div>
   );
 };

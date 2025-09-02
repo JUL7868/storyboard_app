@@ -4,6 +4,7 @@ const EditModal = ({ card, onSave, onClose, onPromote }) => {
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description);
 
+  // Keep modal state in sync if another card is opened
   useEffect(() => {
     setTitle(card.title);
     setDescription(card.description);
@@ -64,14 +65,18 @@ const EditModal = ({ card, onSave, onClose, onPromote }) => {
           )}
 
           <button
-            onClick={() => onSave({ ...card, title, description })}
+            onClick={() => {
+              // ✅ only update React state
+              onSave({ ...card, title, description });
+              onClose(); // auto-close after save
+            }}
             style={{
               backgroundColor: "#007acc",
               color: "#fff",
               padding: "0.5rem 1rem",
             }}
           >
-            Save
+            Apply
           </button>
         </div>
       </div>

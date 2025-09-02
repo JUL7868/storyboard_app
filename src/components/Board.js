@@ -9,44 +9,83 @@ import EditModal from './EditModal';
 import Card from './Card';
 
 const initialData = {
-  title: "Setup",
+  title: "Storyboard",
   description: "This story explores how characters seek and achieve redemption.",
   columns: [
-    { id: 'column-1', title: 'Setup', description: "", cards: [] },
-    { id: 'column-2', title: 'Conflict', description: "", cards: [] },
-    { id: 'column-3', title: 'Rising Action', description: "", cards: [] },
-    { id: 'column-4', title: 'Climax', description: "", cards: [] },
-    { id: 'column-5', title: 'Falling Action', description: "", cards: [] },
-    { id: 'column-6', title: 'Resolution', description: "", cards: [] },
-    { id: 'column-7', title: 'Epilogue', description: "", cards: [] },
+    { id: 'column-1', title: 'Header 1', description: "", cards: [] },
+    { id: 'column-2', title: 'Header 2', description: "", cards: [] },
+    { id: 'column-3', title: 'Header 3', description: "", cards: [] },
+    { id: 'column-4', title: 'Header 4', description: "", cards: [] },
+    { id: 'column-5', title: 'Header 5', description: "", cards: [] },
+    { id: 'column-6', title: 'Header 6', description: "", cards: [] },
+    { id: 'column-7', title: 'Header 7', description: "", cards: [] },
   ]
 };
 
-const Board = ({ selected }) => {
+const Board = ({ selected, triggerSave }) => {
   const [board, setBoard] = useState(initialData);
   const [editingCard, setEditingCard] = useState(null);
+  const [saveMessage, setSaveMessage] = useState(""); // ✅ toast state
 
   // ✅ Fetch board from API when selected changes
   useEffect(() => {
     if (selected) {
-      fetch(`http://localhost/api.php?path=boards&id=${selected}`)
+      fetch(`/storyboard_app/api.php?path=board&id=${selected}`)
         .then(res => res.json())
         .then(data => {
-          if (Array.isArray(data) && data.length > 0) {
-            setBoard(data[0]); // use the API board
+          if (data.error) {
+            console.error("API error:", data.error);
+            return;
           }
+          setBoard({
+            ...initialData,
+            ...data,
+            columns: data.columns || initialData.columns
+          });
         })
-        .catch(err => {
-          console.error("API error:", err);
-        });
+        .catch(err => console.error("Board fetch failed:", err));
     }
   }, [selected]);
+
+// ✅ Save board to API when Save button is triggered
+useEffect(() => {
+  if (triggerSave > 0) {
+    const payload = {
+      id: board.id || "",
+      title: board.title,
+      description: board.description,
+      columns: board.columns || []
+    };
+
+    fetch("/storyboard_app/api.php?path=saveBoard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setBoard(prev => ({ ...prev, id: data.id }));
+          setSaveMessage("✅ Board saved!");
+        } else {
+          setSaveMessage("❌ Save failed: " + (data.error || "Unknown error"));
+        }
+        setTimeout(() => setSaveMessage(""), 3000);
+      })
+      .catch((err) => {
+        console.error("Save error:", err);
+        setSaveMessage("❌ Save error, check console");
+        setTimeout(() => setSaveMessage(""), 5000);
+      });
+  }
+  // ✅ Only depend on triggerSave!
+}, [triggerSave]);
+
 
   // ---------- Add Card ----------
   const handleAddCard = (colId) => {
     const updatedColumns = board.columns.map(col => {
       if (col.id !== colId) return col;
-
       if (col.cards.length >= 7) return col;
 
       const newCard = {
@@ -151,12 +190,21 @@ const Board = ({ selected }) => {
 
   return (
     <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-      {/* Logo still present — remove if not needed */}
-      <img 
-        src="studioImaginando.png" 
-        alt="Studio Imaginando" 
-        style={{ width: '100px', marginBottom: '0.5rem' }} 
-      />
+      {/* ✅ Toast message */}
+      {saveMessage && (
+        <div
+          style={{
+            backgroundColor: saveMessage.startsWith("✅") ? "#4caf50" : "#f44336",
+            color: "#fff",
+            padding: "0.5rem 1rem",
+            borderRadius: "4px",
+            marginBottom: "1rem",
+            display: "inline-block"
+          }}
+        >
+          {saveMessage}
+        </div>
+      )}
 
       {/* Editable Title */}
       <h3
@@ -200,7 +248,7 @@ const Board = ({ selected }) => {
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div style={{ display: 'flex', gap: '1rem', minWidth: '1100px' }}>
-          {board.columns.map((col) => (
+          {(board.columns || []).map((col) => (
             <Droppable key={col.id} droppableId={col.id}>
               {(provided) => (
                 <div
@@ -216,7 +264,6 @@ const Board = ({ selected }) => {
                     flexShrink: 0
                   }}
                 >
-                  {/* Column Header as Card */}
                   <Card
                     card={{
                       id: col.id,
@@ -227,7 +274,6 @@ const Board = ({ selected }) => {
                     onClick={(c) => setEditingCard(c)}
                   />
 
-                  {/* Detail Cards */}
                   {col.cards.map((card, index) => (
                     <Draggable key={card.id} draggableId={card.id} index={index}>
                       {(provided) => (
@@ -250,7 +296,6 @@ const Board = ({ selected }) => {
                   ))}
                   {provided.placeholder}
 
-                  {/* +Card Button */}
                   <button
                     onClick={() => handleAddCard(col.id)}
                     style={{
@@ -263,7 +308,7 @@ const Board = ({ selected }) => {
                       cursor: 'pointer'
                     }}
                   >
-                    + Card
+                    + Subber
                   </button>
                 </div>
               )}
@@ -281,11 +326,10 @@ const Board = ({ selected }) => {
         />
       )}
 
-      {/* Reset Board Button */}
       <div style={{ marginTop: '2rem', textAlign: 'center' }}>
         <button
           onClick={() => {
-            setBoard(initialData); // Reset to fallback only
+            setBoard(initialData);
           }}
           style={{
             padding: '0.5rem 1rem',

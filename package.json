@@ -1,4 +1,5 @@
 {
+  "proxy": "http://localhost",
   "name": "storyboard-app",
   "version": "0.1.0",
   "private": true,

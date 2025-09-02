@@ -183,3 +183,17 @@ body.dark,
   background-color: #121212;
   color: #ffffff;
 }
+
+/* Smaller font sizes for a cleaner board */
+h3 {
+  font-size: 1.1rem; /* smaller headers */
+}
+
+p {
+  font-size: 0.9rem; /* description text */
+  line-height: 1.3;
+}
+
+button {
+  font-size: 0.85rem;
+}
