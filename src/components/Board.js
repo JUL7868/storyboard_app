@@ -22,6 +22,38 @@ const initialData = {
   ]
 };
 
+// ✅ Ensure 7 headers and 7 subbers per header
+const normalizeBoard = (board) => {
+  let headers = board.columns || [];
+  // pad headers up to 7
+  for (let i = headers.length; i < 7; i++) {
+    headers.push({
+      id: `column-${i + 1}`,
+      title: `Header ${i + 1}`,
+      description: "",
+      cards: []
+    });
+  }
+  // trim if more than 7
+  headers = headers.slice(0, 7);
+
+  // for each header, ensure 7 subbers
+  headers = headers.map((h) => {
+    let cards = h.cards || [];
+    for (let j = cards.length; j < 7; j++) {
+      cards.push({
+        id: `${h.id}-card${j + 1}`,
+        title: "",
+        description: ""
+      });
+    }
+    cards = cards.slice(0, 7);
+    return { ...h, cards };
+  });
+
+  return { ...board, columns: headers };
+};
+
 const Board = ({ selected, triggerSave }) => {
   const [board, setBoard] = useState(initialData);
   const [editingCard, setEditingCard] = useState(null);
@@ -47,40 +79,40 @@ const Board = ({ selected, triggerSave }) => {
     }
   }, [selected]);
 
-// ✅ Save board to API when Save button is triggered
-useEffect(() => {
-  if (triggerSave > 0) {
-    const payload = {
-      id: board.id || "",
-      title: board.title,
-      description: board.description,
-      columns: board.columns || []
-    };
+  // ✅ Save board to API when Save button is triggered
+  useEffect(() => {
+    if (triggerSave > 0) {
+      const normalized = normalizeBoard(board);
 
-    fetch("/storyboard_app/api.php?path=saveBoard", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setBoard(prev => ({ ...prev, id: data.id }));
-          setSaveMessage("✅ Board saved!");
-        } else {
-          setSaveMessage("❌ Save failed: " + (data.error || "Unknown error"));
-        }
-        setTimeout(() => setSaveMessage(""), 3000);
+      const payload = {
+        id: normalized.id || "",
+        title: normalized.title,
+        description: normalized.description,
+        columns: normalized.columns
+      };
+
+      fetch("/storyboard_app/api.php?path=saveBoard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       })
-      .catch((err) => {
-        console.error("Save error:", err);
-        setSaveMessage("❌ Save error, check console");
-        setTimeout(() => setSaveMessage(""), 5000);
-      });
-  }
-  // ✅ Only depend on triggerSave!
-}, [triggerSave]);
-
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setBoard(prev => ({ ...prev, id: data.id }));
+            setSaveMessage("✅ Board saved!");
+          } else {
+            setSaveMessage("❌ Save failed: " + (data.error || "Unknown error"));
+          }
+          setTimeout(() => setSaveMessage(""), 3000);
+        })
+        .catch((err) => {
+          console.error("Save error:", err);
+          setSaveMessage("❌ Save error, check console");
+          setTimeout(() => setSaveMessage(""), 5000);
+        });
+    }
+  }, [triggerSave]);
 
   // ---------- Add Card ----------
   const handleAddCard = (colId) => {

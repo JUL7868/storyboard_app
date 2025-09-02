@@ -2,42 +2,57 @@
 import React, { useEffect, useState } from "react";
 import TreeNode from "./TreeNode";
 
-// Utility: build nested tree from flat boards
-function buildTree(boards, parentId = null) {
-  return boards
-    .filter(b => b.parent_id === parentId)
-    .map(b => ({
-      ...b,
-      children: buildTree(boards, b.id) // recurse
-    }));
-}
-
-const Drawer = ({ onSelect }) => {
+const Drawer = ({ onSelect, activeBoardId }) => {
   const [boards, setBoards] = useState([]);
+  const [tree, setTree] = useState([]);
 
+  // Fetch all boards once
   useEffect(() => {
     fetch("/storyboard_app/api.php?path=boards")
       .then((res) => res.json())
       .then((data) => {
-        const tree = buildTree(data); // ✅ convert flat list into nested tree
-        setBoards(tree);
+        if (data.error) {
+          console.error("API error:", data.error);
+          return;
+        }
+        setBoards(data);
       })
-      .catch((err) => console.error("Drawer API error:", err));
+      .catch((err) => console.error("Failed to fetch boards:", err));
   }, []);
 
+  // Build nested tree from flat list
+  useEffect(() => {
+    const buildTree = (items, parentId = null) => {
+      return items
+        .filter((item) => item.parent_id === parentId)
+        .map((item) => ({
+          ...item,
+          children: buildTree(items, item.id),
+        }));
+    };
+    setTree(buildTree(boards));
+  }, [boards]);
+
   return (
-    <div className="drawer">
-      <h3 className="drawer-title">Storyboards</h3>
-      <div className="drawer-tree" style={{ fontSize: "0.9rem", lineHeight: "1.4" }}>
-        {boards.map((board) => (
-          <TreeNode
-            key={board.id}
-            node={board}
-            onSelect={onSelect}
-            level={0}   // start indent at root
-          />
-        ))}
-      </div>
+    <div
+      style={{
+        width: "250px",
+        background: "#f4f4f4",
+        borderRight: "1px solid #ddd",
+        padding: "0.5rem",
+        overflowY: "auto",
+      }}
+    >
+      <h4 style={{ margin: "0 0 1rem 0" }}>Storyboards</h4>
+
+      {tree.map((node) => (
+        <TreeNode
+          key={node.id}
+          node={node}
+          onSelect={onSelect}
+          activeBoardId={activeBoardId}
+        />
+      ))}
     </div>
   );
 };

@@ -1,135 +1,134 @@
 <?php
-// ==== CORS headers ====
-$allowed_origin = "http://localhost:3005";  // React dev server origin
-header("Access-Control-Allow-Origin: $allowed_origin");
+// api.php – Storyboarder backend
+header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-header("Access-Control-Allow-Credentials: true");
-header("Content-Type: application/json");
+header("Access-Control-Allow-Headers: Content-Type");
 
-// Handle preflight OPTIONS request
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
+$servername = "localhost";
+$username   = "root";
+$password   = "";
+$dbname     = "storyboarder_db";
 
-
-
-
-// ==== CONFIG ====
-$host = "localhost";
-$db   = "storyboarder_db";
-$user = "root";
-$pass = "";
-
-// ==== CONNECT ====
-header("Content-Type: application/json");
-$conn = new mysqli($host, $user, $pass, $db);
+$conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
-    http_response_code(500);
-    echo json_encode(["error" => "DB connection failed"]);
-    exit;
+  http_response_code(500);
+  echo json_encode(["error" => "DB connection failed"]);
+  exit;
 }
 
-// ==== ROUTER ====
-$path = $_GET['path'] ?? '';
+$path = $_GET["path"] ?? "";
 
-/**
- * Get list of boards (id + title only)
- */
-if ($path === 'boards') {
-    $sql = "SELECT id, title, parent_id FROM boards";
-    $result = $conn->query($sql);
+//
+// ---------- Fetch single Title ----------
+if ($path === "board" && isset($_GET["id"])) {
+  $boardId = $conn->real_escape_string($_GET["id"]);
 
-    $boards = [];
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $boards[] = $row;
+  $boardRes = $conn->query("SELECT * FROM boards WHERE id='$boardId'");
+  if (!$boardRes || $boardRes->num_rows === 0) {
+    echo json_encode(["error" => "Board not found"]);
+    exit;
+  }
+  $board = $boardRes->fetch_assoc();
+
+  // Fetch Headers
+  $colsRes = $conn->query("SELECT * FROM columns WHERE board_id='$boardId' ORDER BY position ASC");
+  $columns = [];
+  while ($col = $colsRes->fetch_assoc()) {
+    $colId = $col["id"];
+    // Fetch Subbers for this Header
+    $cardsRes = $conn->query("SELECT * FROM cards WHERE column_id='$colId' ORDER BY position ASC");
+    $cards = [];
+    while ($card = $cardsRes->fetch_assoc()) {
+      $cards[] = $card;
+    }
+    $col["cards"] = $cards;
+    $columns[] = $col;
+  }
+  $board["columns"] = $columns;
+
+  echo json_encode($board);
+  exit;
+}
+
+//
+// ---------- Save Title (with Headers + Subbers) ----------
+if ($path === "saveBoard" && $_SERVER["REQUEST_METHOD"] === "POST") {
+  $data = json_decode(file_get_contents("php://input"), true);
+
+  // Debug: log payload
+  error_log("SAVE BOARD PAYLOAD:\n" . print_r($data, true));
+
+  $boardId     = $conn->real_escape_string($data["id"] ?? uniqid("board_"));
+  $title       = $conn->real_escape_string($data["title"] ?? "Untitled");
+  $description = $conn->real_escape_string($data["description"] ?? "");
+  $parentId    = isset($data["parent_id"])
+                   ? "'".$conn->real_escape_string($data["parent_id"])."'"
+                   : "NULL";
+
+  // Save Title
+  $conn->query("
+    INSERT INTO boards (id, title, description, parent_id)
+    VALUES ('$boardId', '$title', '$description', $parentId)
+    ON DUPLICATE KEY UPDATE 
+      title='$title',
+      description='$description',
+      parent_id=$parentId
+  ");
+
+  // Save Headers
+  if (!empty($data["columns"])) {
+    foreach ($data["columns"] as $colIndex => $col) {
+      $colId    = $conn->real_escape_string($col["id"]);
+      $colTitle = $conn->real_escape_string($col["title"] ?? "Untitled");
+      $colDesc  = $conn->real_escape_string($col["description"] ?? "");
+
+      $conn->query("
+        INSERT INTO columns (id, board_id, title, description, position)
+        VALUES ('$colId', '$boardId', '$colTitle', '$colDesc', $colIndex)
+        ON DUPLICATE KEY UPDATE 
+          title='$colTitle',
+          description='$colDesc',
+          position=$colIndex,
+          board_id='$boardId'
+      ");
+
+      // Save Subbers
+      if (!empty($col["cards"])) {
+        foreach ($col["cards"] as $cardIndex => $card) {
+          $cardId    = $conn->real_escape_string($card["id"]);
+          $cardTitle = $conn->real_escape_string($card["title"] ?? "");
+          $cardDesc  = $conn->real_escape_string($card["description"] ?? "");
+
+          $conn->query("
+            INSERT INTO cards (id, column_id, title, description, position)
+            VALUES ('$cardId', '$colId', '$cardTitle', '$cardDesc', $cardIndex)
+            ON DUPLICATE KEY UPDATE 
+              title='$cardTitle',
+              description='$cardDesc',
+              position=$cardIndex,
+              column_id='$colId'
+          ");
         }
+      }
     }
+  }
 
-    echo json_encode($boards);
-    exit;
+  echo json_encode(["success" => true, "id" => $boardId]);
+  exit;
 }
 
-/**
- * Get a single board (id, title, description + scaffold columns/cards)
- */
-if ($path === 'board' && isset($_GET['id'])) {
-    $id = $conn->real_escape_string($_GET['id']);
-    $sql = "SELECT id, title, description FROM boards WHERE id='$id'";
-    $result = $conn->query($sql);
-
-    if ($row = $result->fetch_assoc()) {
-        // Build 7x7 scaffold
-        $columnTitles = [
-            "Setup", "Conflict", "Rising Action", "Climax",
-            "Falling Action", "Resolution", "Epilogue"
-        ];
-
-        $columns = [];
-        foreach ($columnTitles as $i => $title) {
-            $cards = [];
-            for ($j = 1; $j <= 7; $j++) {
-                $cards[] = [
-                    "id" => "col-".($i+1)."-card".$j,
-                    "title" => "",
-                    "description" => "",
-                    "children" => []
-                ];
-            }
-
-            $columns[] = [
-                "id" => "column-".($i+1),
-                "title" => $title,
-                "description" => "",
-                "cards" => $cards
-            ];
-        }
-
-        $row['columns'] = $columns;
-        echo json_encode($row);
-    } else {
-        http_response_code(404);
-        echo json_encode(["error" => "Board not found"]);
-    }
-    exit;
+//
+// ---------- List all Titles ----------
+if ($path === "boards") {
+  $res = $conn->query("SELECT * FROM boards ORDER BY title ASC");
+  $boards = [];
+  while ($row = $res->fetch_assoc()) {
+    $boards[] = $row;
+  }
+  echo json_encode($boards);
+  exit;
 }
 
-/**
- * Save or update a board (+ its columns/cards)
- */
-if ($path === 'saveBoard' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = json_decode(file_get_contents("php://input"), true);
-
-    if (!$data || !isset($data['title'])) {
-        http_response_code(400);
-        echo json_encode(["success" => false, "error" => "Invalid board data"]);
-        exit;
-    }
-
-    try {
-        $id = isset($data['id']) && $data['id'] !== ''
-            ? $conn->real_escape_string($data['id'])
-            : uniqid("board-");
-
-        $title = $conn->real_escape_string($data['title']);
-        $description = $conn->real_escape_string($data['description'] ?? '');
-
-        $sql = "INSERT INTO boards (id, title, description)
-                VALUES ('$id', '$title', '$description')
-                ON DUPLICATE KEY UPDATE title='$title', description='$description'";
-        $conn->query($sql);
-
-        echo json_encode(["success" => true, "id" => $id]);
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(["success" => false, "error" => $e->getMessage()]);
-    }
-    exit;   // ✅ last line
-}           // ✅ closes the if
-
-
-    // ==== DEFAULT ====
-    http_response_code(404);
-    echo json_encode(["error" => "Unknown path"]);
+echo json_encode(["error" => "Unknown path"]);
+$conn->close();
