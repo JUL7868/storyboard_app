@@ -1,12 +1,12 @@
 // src/components/AdminDrawer.js
 import React from "react";
 
-const AdminDrawer = ({ onSave, onToggleTheme, theme }) => {
+const AdminDrawer = ({ onSave, onAddBoard, onDeleteBoard, onToggleTheme, theme }) => {
   return (
     <div className="admin-drawer">
       <h3 className="drawer-title">Admin</h3>
 
-      {/* Save Board Button */}
+      {/* Save Board */}
       <button
         onClick={onSave}
         style={{
@@ -21,15 +21,48 @@ const AdminDrawer = ({ onSave, onToggleTheme, theme }) => {
           fontWeight: "600",
         }}
       >
-        Save Board
+        💾 Save Board
       </button>
 
-      {/* Theme Toggle Button */}
+      {/* Add Storyboard */}
       <button
-        onClick={() => {
-          console.log("Button clicked! theme before:", theme);
-          onToggleTheme();
+        onClick={onAddBoard}
+        style={{
+          marginTop: "1rem",
+          width: "100%",
+          padding: "0.5rem",
+          backgroundColor: "#2196f3",
+          color: "#fff",
+          border: "none",
+          borderRadius: "6px",
+          cursor: "pointer",
+          fontWeight: "600",
         }}
+      >
+        ➕ Add Storyboard
+      </button>
+
+      {/* Delete Storyboard */}
+      <button
+        onClick={onDeleteBoard}
+        style={{
+          marginTop: "1rem",
+          width: "100%",
+          padding: "0.5rem",
+          backgroundColor: "#f44336",
+          color: "#fff",
+          border: "none",
+          borderRadius: "6px",
+          cursor: "pointer",
+          fontWeight: "600",
+        }}
+      >
+        🗑️ Delete Storyboard
+      </button>
+
+      {/* Theme Toggle */}
+      <button
+        onClick={onToggleTheme}
         style={{
           marginTop: "1rem",
           width: "100%",
@@ -44,7 +77,6 @@ const AdminDrawer = ({ onSave, onToggleTheme, theme }) => {
       >
         Switch to {theme === "light" ? "Dark" : "Light"} Theme
       </button>
-
     </div>
   );
 };

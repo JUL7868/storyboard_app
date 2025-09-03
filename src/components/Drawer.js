@@ -2,11 +2,11 @@
 import React, { useEffect, useState } from "react";
 import TreeNode from "./TreeNode";
 
-const Drawer = ({ onSelect, activeBoardId }) => {
+const Drawer = ({ onSelect, activeBoardId, refresh }) => {
   const [boards, setBoards] = useState([]);
   const [tree, setTree] = useState([]);
 
-  // Fetch all boards once
+  // Fetch boards
   useEffect(() => {
     fetch("/storyboard_app/api.php?path=boards")
       .then((res) => res.json())
@@ -18,9 +18,9 @@ const Drawer = ({ onSelect, activeBoardId }) => {
         setBoards(data);
       })
       .catch((err) => console.error("Failed to fetch boards:", err));
-  }, []);
+  }, [refresh]); // ✅ re-fetch when refresh changes
 
-  // Build nested tree from flat list
+  // Build tree
   useEffect(() => {
     const buildTree = (items, parentId = null) => {
       return items

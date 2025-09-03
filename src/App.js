@@ -12,20 +12,18 @@ function App() {
 
   const [selectedBoardId, setSelectedBoardId] = useState(null);
   const [saveTrigger, setSaveTrigger] = useState(0);
+  const [refreshBoards, setRefreshBoards] = useState(0); // ✅ trigger for Drawer refresh
 
-  // ✅ Ensure body has the current theme class on mount + theme change
   useEffect(() => {
     document.body.className = theme;
   }, [theme]);
 
-  // ✅ Persist selected board in localStorage
   useEffect(() => {
     if (selectedBoardId) {
       localStorage.setItem("selectedBoardId", selectedBoardId);
     }
   }, [selectedBoardId]);
 
-  // ✅ Restore last selected board on load
   useEffect(() => {
     const saved = localStorage.getItem("selectedBoardId");
     if (saved) {
@@ -38,7 +36,46 @@ function App() {
   };
 
   const handleSaveBoard = () => {
-    setSaveTrigger((prev) => prev + 1); // signal Board to save
+    setSaveTrigger((prev) => prev + 1);
+  };
+
+  const handleAddBoard = () => {
+    const payload = {
+      title: "New Storyboard",
+      description: "This is a new storyboard.",
+      columns: [] // api.php will seed defaults
+    };
+
+    fetch("http://localhost/storyboard_app/api.php?path=saveBoard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setSelectedBoardId(data.id);
+          setRefreshBoards((prev) => prev + 1); // ✅ refresh drawer after add
+        } else {
+          console.error("Failed to create board:", data.error);
+        }
+      })
+      .catch((err) => console.error("Error creating new board:", err));
+  };
+
+  const handleDeleteBoard = () => {
+    if (!selectedBoardId) return;
+    if (!window.confirm("Are you sure you want to delete this storyboard?")) return;
+
+    fetch(`http://localhost/storyboard_app/api.php?path=deleteBoard&id=${selectedBoardId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setSelectedBoardId(null);
+          setRefreshBoards((prev) => prev + 1); // ✅ refresh drawer after delete
+        }
+      })
+      .catch((err) => console.error("Error deleting board:", err));
   };
 
   return (
@@ -54,7 +91,11 @@ function App() {
           {showLeftDrawer ? "×" : "☰"}
         </button>
         {showLeftDrawer && (
-          <Drawer onSelect={setSelectedBoardId} />
+          <Drawer
+            onSelect={setSelectedBoardId}
+            activeBoardId={selectedBoardId}
+            refresh={refreshBoards} // ✅ pass refresh trigger
+          />
         )}
       </div>
 
@@ -79,6 +120,8 @@ function App() {
         {showRightDrawer && (
           <AdminDrawer
             onSave={handleSaveBoard}
+            onAddBoard={handleAddBoard}
+            onDeleteBoard={handleDeleteBoard} // ✅ new
             onToggleTheme={toggleTheme}
             theme={theme}
           />
@@ -89,4 +132,3 @@ function App() {
 }
 
 export default App;
-  
