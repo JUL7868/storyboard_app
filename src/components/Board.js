@@ -25,7 +25,6 @@ const initialData = {
 // ✅ Ensure 7 headers and 7 subbers per header
 const normalizeBoard = (board) => {
   let headers = board.columns || [];
-  // pad headers up to 7
   for (let i = headers.length; i < 7; i++) {
     headers.push({
       id: `column-${i + 1}`,
@@ -34,10 +33,8 @@ const normalizeBoard = (board) => {
       cards: []
     });
   }
-  // trim if more than 7
   headers = headers.slice(0, 7);
 
-  // for each header, ensure 7 subbers
   headers = headers.map((h) => {
     let cards = h.cards || [];
     for (let j = cards.length; j < 7; j++) {
@@ -57,7 +54,7 @@ const normalizeBoard = (board) => {
 const Board = ({ selected, triggerSave }) => {
   const [board, setBoard] = useState(initialData);
   const [editingCard, setEditingCard] = useState(null);
-  const [saveMessage, setSaveMessage] = useState(""); // ✅ toast state
+  const [saveMessage, setSaveMessage] = useState("");
 
   // ✅ Fetch board from API when selected changes
   useEffect(() => {
@@ -79,60 +76,41 @@ const Board = ({ selected, triggerSave }) => {
     }
   }, [selected]);
 
-  // ✅ Save board to API when Save button is triggered
-  useEffect(() => {
-    if (triggerSave > 0) {
-      const normalized = normalizeBoard(board);
+// ✅ Save board to API when Save button is triggered
+    useEffect(() => {
+      if (triggerSave > 0) {
+        const normalized = normalizeBoard(board);
 
-      const payload = {
-        id: normalized.id || "",
-        title: normalized.title,
-        description: normalized.description,
-        columns: normalized.columns
-      };
+        const payload = {
+          id: normalized.id || "",
+          title: normalized.title,
+          description: normalized.description,
+          columns: normalized.columns
+        };
 
-      fetch("/storyboard_app/api.php?path=saveBoard", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setBoard(prev => ({ ...prev, id: data.id }));
-            setSaveMessage("✅ Board saved!");
-          } else {
-            setSaveMessage("❌ Save failed: " + (data.error || "Unknown error"));
-          }
-          setTimeout(() => setSaveMessage(""), 3000);
+        fetch("/storyboard_app/api.php?path=saveBoard", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         })
-        .catch((err) => {
-          console.error("Save error:", err);
-          setSaveMessage("❌ Save error, check console");
-          setTimeout(() => setSaveMessage(""), 5000);
-        });
-    }
-  }, [triggerSave]);
-
-  // ---------- Add Card ----------
-  const handleAddCard = (colId) => {
-    const updatedColumns = board.columns.map(col => {
-      if (col.id !== colId) return col;
-      if (col.cards.length >= 7) return col;
-
-      const newCard = {
-        id: `${col.id}-card${col.cards.length + 1}`,
-        type: "detail",
-        title: `Card ${col.cards.length + 1}`,
-        description: `New detail ${col.cards.length + 1}`,
-        children: []
-      };
-
-      return { ...col, cards: [...col.cards, newCard] };
-    });
-
-    setBoard({ ...board, columns: updatedColumns });
-  };
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              setBoard(prev => ({ ...prev, id: data.id }));
+              setSaveMessage("✅ Board saved!");
+            } else {
+              setSaveMessage("❌ Save failed: " + (data.error || "Unknown error"));
+            }
+            setTimeout(() => setSaveMessage(""), 3000);
+          })
+          .catch((err) => {
+            console.error("Save error:", err);
+            setSaveMessage("❌ Save error, check console");
+            setTimeout(() => setSaveMessage(""), 5000);
+          });
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [triggerSave]);
 
   // ---------- Save Card ----------
   const handleCardSave = (updatedCard) => {
@@ -239,15 +217,8 @@ const Board = ({ selected, triggerSave }) => {
       )}
 
       {/* Editable Title */}
-      <h3
-        style={{
-          textAlign: 'center',
-          maxWidth: '400px',
-          margin: '10px auto',
-          padding: '0.25rem 0',
-          border: '1px solid #333',
-          borderRadius: '4px'
-        }}
+      <h1
+        className="text-3xl font-bold text-center text-gray-800 mb-2 border-b border-gray-300 pb-1"
         contentEditable
         suppressContentEditableWarning
         onBlur={(e) =>
@@ -255,20 +226,11 @@ const Board = ({ selected, triggerSave }) => {
         }
       >
         {board.title}
-      </h3>
+      </h1>
 
       {/* Editable Description */}
       <p
-        style={{
-          textAlign: 'center',
-          maxWidth: '600px',
-          margin: '0 auto 2rem auto',
-          padding: '0.5rem',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '6px',
-          border: '1px solid #ddd',
-          color: 'black'
-        }}
+        className="text-lg text-center text-gray-500 mb-8 max-w-2xl mx-auto p-2 bg-gray-50 border border-gray-200 rounded-lg"
         contentEditable
         suppressContentEditableWarning
         onBlur={(e) =>
@@ -328,20 +290,6 @@ const Board = ({ selected, triggerSave }) => {
                   ))}
                   {provided.placeholder}
 
-                  <button
-                    onClick={() => handleAddCard(col.id)}
-                    style={{
-                      marginTop: '0.5rem',
-                      width: '100%',
-                      padding: '0.25rem',
-                      border: '1px dashed #aaa',
-                      borderRadius: '4px',
-                      background: 'transparent',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    + Subber
-                  </button>
                 </div>
               )}
             </Droppable>
@@ -358,23 +306,6 @@ const Board = ({ selected, triggerSave }) => {
         />
       )}
 
-      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-        <button
-          onClick={() => {
-            setBoard(initialData);
-          }}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: '#e53935',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
-        >
-          Reset Board
-        </button>
-      </div>
     </div>
   );
 };

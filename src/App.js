@@ -3,6 +3,9 @@ import React, { useState, useEffect } from "react";
 import Board from "./components/Board";
 import Drawer from "./components/Drawer";
 import AdminDrawer from "./components/AdminDrawer";
+import LogoBlack from "./assets/logo-black.png";
+import LogoWhite from "./assets/logo-white.png";
+
 import "./App.css";
 
 function App() {
@@ -101,9 +104,17 @@ function App() {
 
       {/* Main Content */}
       <div className="main-content">
-        <header className="app-header">
-          <h1>Storyboarder</h1>
-        </header>
+      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        {/* Left: Logo */}
+        <div className="flex items-center gap-2">
+          <img
+            src={theme === "light" ? LogoBlack : LogoWhite}
+            alt="Storyboarder Logo"
+            width="10%"
+          />
+        </div>  
+      </header>
+
         <Board selected={selectedBoardId} triggerSave={saveTrigger} />
       </div>
 
