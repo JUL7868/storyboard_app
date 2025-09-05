@@ -197,3 +197,20 @@ p {
 button {
   font-size: 0.85rem;
 }
+
+/* Works in Chrome, Edge, Safari */
+.drawer-content::-webkit-scrollbar {
+  width: 0px;   /* remove scrollbar track */
+  height: 0px;
+}
+
+/* Works in Firefox */
+.drawer-content {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge */
+}
+
+/* Works in IE/Edge legacy */
+.drawer-content {
+  -ms-overflow-style: none;
+}

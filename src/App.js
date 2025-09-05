@@ -84,36 +84,28 @@ function App() {
   return (
     <div className={`app-layout ${theme}`}>
       {/* Left Drawer */}
-      <div
-        className={`drawer-container left ${showLeftDrawer ? "expanded" : "collapsed"}`}
-      >
-        <button
-          className="toggle-btn"
-          onClick={() => setShowLeftDrawer(!showLeftDrawer)}
-        >
-          {showLeftDrawer ? "×" : "☰"}
-        </button>
-        {showLeftDrawer && (
-          <Drawer
-            onSelect={setSelectedBoardId}
-            activeBoardId={selectedBoardId}
-            refresh={refreshBoards} // ✅ pass refresh trigger
-          />
-        )}
+      <div className={`drawer-container-left ${showLeftDrawer ? "expanded" : "collapsed"}`}>
+        <Drawer
+          onSelect={setSelectedBoardId}
+          activeBoardId={selectedBoardId}
+          refresh={refreshBoards}
+          isOpen={showLeftDrawer}
+          onToggle={() => setShowLeftDrawer(!showLeftDrawer)}
+        />
       </div>
 
       {/* Main Content */}
       <div className="main-content">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        {/* Left: Logo */}
-        <div className="flex items-center gap-2">
-          <img
-            src={theme === "light" ? LogoBlack : LogoWhite}
-            alt="Storyboarder Logo"
-            width="10%"
-          />
-        </div>  
-      </header>
+        <header className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-black">
+          {/* Left: Logo */}
+          <div className="flex items-center">
+            <img
+              src={theme === "light" ? LogoBlack : LogoWhite}
+              alt="Storyboarder Logo"
+              width="200px"
+            />
+          </div>
+        </header>
 
         <Board selected={selectedBoardId} triggerSave={saveTrigger} />
       </div>
@@ -122,12 +114,19 @@ function App() {
       <div
         className={`drawer-container right ${showRightDrawer ? "expanded" : "collapsed"}`}
       >
-        <button
-          className="toggle-btn"
-          onClick={() => setShowRightDrawer(!showRightDrawer)}
-        >
-          {showRightDrawer ? "×" : "☰"}
-        </button>
+
+      <AdminDrawer
+        onSave={handleSaveBoard}
+        onAddBoard={handleAddBoard}
+        onDeleteBoard={handleDeleteBoard} // ✅ still passed
+        onToggleTheme={toggleTheme}
+        theme={theme}
+        isOpen={showRightDrawer}
+        onToggle={() => setShowRightDrawer(!showRightDrawer)}
+      />
+
+
+
         {showRightDrawer && (
           <AdminDrawer
             onSave={handleSaveBoard}
