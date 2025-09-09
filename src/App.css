@@ -9,16 +9,16 @@
 
 .board-header {
   display: flex;
-  justify-content: center;   /* ✅ center the logo */
+  justify-content: center;
   align-items: center;
   margin-bottom: 1rem;
-  position: relative;        /* needed for button absolute positioning */
+  position: relative;
   padding: 0 1rem;
 }
 
 .studio-logo {
-  height: 80px;   /* adjust to fit header nicely */
-  width: auto;    /* keep proportions */
+  height: 80px;
+  width: auto;
   margin-top: 0.5rem;
 }
 
@@ -47,6 +47,7 @@
   border-radius: 6px;
   border: 1px solid #ddd;
 }
+
 /* Light theme */
 body.light .board-title,
 .app-layout.light .board-title {
@@ -84,16 +85,15 @@ body.dark h4 {
 .board-columns {
   display: flex;
   gap: 1rem;
-  min-width: 1100px;
+  min-width: 1100px; /* ❌ Can probably remove since Board.js now uses CSS grid */
 }
 
 .column {
   background-color: #fefefe;
   border: 1px solid #ccc;
   border-radius: 8px;
-  width: 150px;
   padding: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   flex-shrink: 0;
 }
 
@@ -102,60 +102,12 @@ body.dark h4 {
 }
 
 /* ==========================
-   App Layout + Drawers
+   App Layout
    ========================== */
 
 .app-layout {
   display: flex;
   height: 100vh;
-}
-
-/* Drawer containers */
-.drawer-container {
-  transition: width 0.3s ease;
-  background: #f8f8f8;
-  overflow: hidden;
-  position: relative;
-}
-
-.drawer-container.left {
-  border-right: 1px solid #ccc;
-  color: black;
-}
-
-.drawer-container.right {
-  border-left: 1px solid #ccc;
-}
-
-.drawer-container.collapsed {
-  width: 40px; /* only hamburger visible */
-}
-
-.drawer-container.expanded.left {
-  width: 220px;
-}
-
-.drawer-container.expanded.right {
-  width: 180px;
-}
-
-/* Toggle buttons (hamburger/close) */
-.toggle-btn {
-  position: absolute;
-  top: 5px;
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0.5rem;
-}
-
-.drawer-container.left .toggle-btn {
-  left: 5px;
-}
-
-.drawer-container.right .toggle-btn {
-  right: 5px;
 }
 
 .main-content {
@@ -186,11 +138,11 @@ body.dark,
 
 /* Smaller font sizes for a cleaner board */
 h3 {
-  font-size: 1.1rem; /* smaller headers */
+  font-size: 1.1rem;
 }
 
 p {
-  font-size: 0.9rem; /* description text */
+  font-size: 0.9rem;
   line-height: 1.3;
 }
 
@@ -198,19 +150,18 @@ button {
   font-size: 0.85rem;
 }
 
+/* ==========================
+   Scrollbar Hiding
+   ========================== */
+
 /* Works in Chrome, Edge, Safari */
 .drawer-content::-webkit-scrollbar {
-  width: 0px;   /* remove scrollbar track */
+  width: 0px;
   height: 0px;
 }
 
 /* Works in Firefox */
 .drawer-content {
-  scrollbar-width: none;       /* Firefox */
-  -ms-overflow-style: none;    /* IE/Edge */
-}
-
-/* Works in IE/Edge legacy */
-.drawer-content {
-  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none; /* IE/Edge */
 }

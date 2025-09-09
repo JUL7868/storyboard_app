@@ -76,41 +76,41 @@ const Board = ({ selected, triggerSave }) => {
     }
   }, [selected]);
 
-// ✅ Save board to API when Save button is triggered
-    useEffect(() => {
-      if (triggerSave > 0) {
-        const normalized = normalizeBoard(board);
+  // ✅ Save board to API when Save button is triggered
+  useEffect(() => {
+    if (triggerSave > 0) {
+      const normalized = normalizeBoard(board);
 
-        const payload = {
-          id: normalized.id || "",
-          title: normalized.title,
-          description: normalized.description,
-          columns: normalized.columns
-        };
+      const payload = {
+        id: normalized.id || "",
+        title: normalized.title,
+        description: normalized.description,
+        columns: normalized.columns
+      };
 
-        fetch("/storyboard_app/api.php?path=saveBoard", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+      fetch("/storyboard_app/api.php?path=saveBoard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setBoard(prev => ({ ...prev, id: data.id }));
+            setSaveMessage("✅ Board saved!");
+          } else {
+            setSaveMessage("❌ Save failed: " + (data.error || "Unknown error"));
+          }
+          setTimeout(() => setSaveMessage(""), 3000);
         })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success) {
-              setBoard(prev => ({ ...prev, id: data.id }));
-              setSaveMessage("✅ Board saved!");
-            } else {
-              setSaveMessage("❌ Save failed: " + (data.error || "Unknown error"));
-            }
-            setTimeout(() => setSaveMessage(""), 3000);
-          })
-          .catch((err) => {
-            console.error("Save error:", err);
-            setSaveMessage("❌ Save error, check console");
-            setTimeout(() => setSaveMessage(""), 5000);
-          });
-      }
+        .catch((err) => {
+          console.error("Save error:", err);
+          setSaveMessage("❌ Save error, check console");
+          setTimeout(() => setSaveMessage(""), 5000);
+        });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [triggerSave]);
+  }, [triggerSave]);
 
   // ---------- Save Card ----------
   const handleCardSave = (updatedCard) => {
@@ -241,7 +241,15 @@ const Board = ({ selected, triggerSave }) => {
       </p>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div style={{ display: 'flex', gap: '1rem', minWidth: '1100px' }}>
+        {/* ✅ Responsive 7x7 grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(7, 1fr)",
+            gap: "1rem",
+            width: "100%"
+          }}
+        >
           {(board.columns || []).map((col) => (
             <Droppable key={col.id} droppableId={col.id}>
               {(provided) => (
@@ -249,13 +257,12 @@ const Board = ({ selected, triggerSave }) => {
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                   style={{
-                    backgroundColor: '#fefefe',
-                    border: '1px solid #ccc',
-                    borderRadius: '8px',
-                    width: '150px',
-                    padding: '0.5rem',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    flexShrink: 0
+                    backgroundColor: "#fefefe",
+                    border: "1px solid #ccc",
+                    borderRadius: "8px",
+                    padding: "0.5rem",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    minHeight: "100px"
                   }}
                 >
                   <Card
@@ -277,7 +284,7 @@ const Board = ({ selected, triggerSave }) => {
                           {...provided.dragHandleProps}
                           style={{
                             ...provided.draggableProps.style,
-                            marginBottom: '0.5rem'
+                            marginBottom: "0.5rem",
                           }}
                         >
                           <Card
@@ -289,7 +296,6 @@ const Board = ({ selected, triggerSave }) => {
                     </Draggable>
                   ))}
                   {provided.placeholder}
-
                 </div>
               )}
             </Droppable>
@@ -305,7 +311,6 @@ const Board = ({ selected, triggerSave }) => {
           onPromote={handlePromote}
         />
       )}
-
     </div>
   );
 };
